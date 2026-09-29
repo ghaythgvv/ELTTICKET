@@ -75,6 +75,18 @@ function ticketButtons({ claimed = false, closed = false } = {}) {
   );
 }
 
+function ticketTypeMenu() {
+  return new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('ticket_type')
+      .setPlaceholder('Select a ticket type')
+      .addOptions(
+        { label: 'Support Ticket', value: 'support', emoji: '🛠️', description: 'Get help from the staff team' },
+        { label: 'Report Ticket', value: 'report', emoji: '🚨', description: 'Report a user or an issue' }
+      )
+  );
+}
+
 const panelState = (msg) => {
   const row = msg.components?.[0]?.components || [];
   return {
@@ -134,21 +146,17 @@ async function ensurePanel(channel) {
   try {
     const recent = await channel.messages.fetch({ limit: 30 }).catch(() => null);
     const exists = recent?.some(
-      (m) => m.author.id === client.user.id && m.components?.[0]?.components?.[0]?.customId === 'ticket_open'
+      (m) => m.author.id === client.user.id && m.components?.[0]?.components?.[0]?.customId === 'ticket_type'
     );
     if (exists) return console.log('ℹ️ Panel already exists, not sending a new one.');
 
     const embed = new EmbedBuilder()
       .setColor(COLOR)
       .setTitle('🎫 Ticket')
-      .setDescription('Choose your ticket.\n\nPress the button below and select the type of ticket you want to open.')
+      .setDescription('Choose your ticket.\n\nSelect the type of ticket you want to open from the dropdown below.')
       .setFooter({ text: channel.guild.name });
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('ticket_open').setLabel('Open a Ticket').setEmoji('🎫').setStyle(ButtonStyle.Primary)
-    );
-
-    await channel.send({ embeds: [embed], components: [row] });
+    await channel.send({ embeds: [embed], components: [ticketTypeMenu()] });
     console.log('✅ Panel sent.');
   } catch (err) {
     console.error(`❌ Could not send the panel: ${err.message} (code ${err.code}). Give the bot View Channel + Send Messages + Embed Links in the ticket channel.`);
@@ -156,27 +164,16 @@ async function ensurePanel(channel) {
 }
 
 // ───────────── HANDLERS ─────────────
-async function handleOpenButton(i) {
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId('ticket_type')
-    .setPlaceholder('Select a ticket type')
-    .addOptions(
-      { label: 'Support Ticket', value: 'support', emoji: '🛠️', description: 'Get help from the staff team' },
-      { label: 'Report Ticket', value: 'report', emoji: '🚨', description: 'Report a user or an issue' }
-    );
-  await i.reply({
-    content: 'What kind of ticket do you want to open?',
-    components: [new ActionRowBuilder().addComponents(menu)],
-    flags: MessageFlags.Ephemeral,
-  });
-}
-
 async function handleCreate(i) {
   const type = i.values[0];
   const info = TYPES[type];
   if (!info) return;
 
-  await i.deferUpdate();
+  // The select menu now lives on the shared, persistent panel message (not a
+  // one-off ephemeral message like before), so this must NOT update i.message —
+  // that would edit the panel itself for everyone. deferReply()/editReply()
+  // instead opens a private reply of its own, same as a fresh i.reply() would.
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = i.guild;
   const user = i.user;
@@ -186,7 +183,7 @@ async function handleCreate(i) {
     (c) => c.parentId === CATEGORY_ID && parseTopic(c)?.owner === user.id
   );
   if (existing) {
-    return i.editReply({ content: `❌ You already have an open ticket: ${existing}`, components: [] });
+    return i.editReply({ content: `❌ You already have an open ticket: ${existing}` });
   }
 
   const safeName = user.username.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || user.id;
@@ -253,7 +250,7 @@ async function handleCreate(i) {
     allowedMentions: { users: [user.id], roles: STAFF_ROLE_IDS },
   });
 
-  await i.editReply({ content: `✅ Your ticket has been created: ${channel}`, components: [] });
+  await i.editReply({ content: `✅ Your ticket has been created: ${channel}` });
 }
 
 async function handleClaim(i) {
@@ -379,7 +376,6 @@ client.on(Events.InteractionCreate, async (i) => {
   try {
     if (i.isButton()) {
       switch (i.customId) {
-        case 'ticket_open': return await handleOpenButton(i);
         case 'ticket_claim': return await handleClaim(i);
         case 'ticket_close': return await handleClose(i);
         case 'ticket_reopen': return await handleReopen(i);
