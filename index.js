@@ -150,16 +150,21 @@ async function ensurePanel(channel) {
   if (!channel) return;
   try {
     const recent = await channel.messages.fetch({ limit: 30 }).catch(() => null);
-    const exists = recent?.some(
+    const existing = recent?.find(
       (m) => m.author.id === client.user.id && m.components?.[0]?.components?.[0]?.customId === 'ticket_type'
     );
-    if (exists) return console.log('ℹ️ Panel already exists, not sending a new one.');
 
     const embed = new EmbedBuilder()
       .setColor(COLOR)
       .setTitle('🎫 Ticket')
       .setDescription('Choose your ticket.\n\nSelect the type of ticket you want to open from the dropdown below.')
       .setFooter({ text: channel.guild.name });
+
+    if (existing) {
+      // Update the old panel in place so color/text changes apply without deleting it
+      await existing.edit({ embeds: [embed], components: [ticketTypeMenu()] });
+      return console.log('✅ Existing panel updated.');
+    }
 
     await channel.send({ embeds: [embed], components: [ticketTypeMenu()] });
     console.log('✅ Panel sent.');
