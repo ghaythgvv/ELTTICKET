@@ -102,10 +102,10 @@ function ticketTypeMenu() {
   return new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('ticket_type')
-      .setPlaceholder('Select a ticket type')
+      .setPlaceholder('Select your ticket type…')
       .addOptions(
-        { label: 'Support Ticket', value: 'support', emoji: SUPPORT_EMOJI, description: 'Get help from the staff team' },
-        { label: 'Report Ticket', value: 'report', emoji: REPORT_EMOJI, description: 'Report a user or an issue' }
+        { label: 'Support Ticket', value: 'support', emoji: SUPPORT_EMOJI, description: 'Questions, help & general issues' },
+        { label: 'Report Ticket', value: 'report', emoji: REPORT_EMOJI, description: 'Report a member, a staff member or a bug' }
       )
   );
 }
@@ -172,11 +172,45 @@ async function ensurePanel(channel) {
       (m) => m.author.id === client.user.id && m.components?.[0]?.components?.[0]?.customId === 'ticket_type'
     );
 
+    const guildIcon = channel.guild.iconURL({ size: 256 });
+
     const embed = new EmbedBuilder()
       .setColor(COLOR)
-      .setTitle(`${emojiToString(PANEL_EMOJI)} Ticket`)
-      .setDescription('Choose your ticket.\n\nSelect the type of ticket you want to open from the dropdown below.')
-      .setFooter({ text: channel.guild.name });
+      .setAuthor({ name: 'ELT | Ticket System', ...(guildIcon ? { iconURL: guildIcon } : {}) })
+      .setTitle(`${emojiToString(PANEL_EMOJI)} ELT SUPPORT CENTER`)
+      .setDescription(
+        '```\n  Welcome to the ELT Support Center\n```\n' +
+          '**Need a hand? Pick a category from the menu below and a private channel will open just for you.**'
+      )
+      .addFields(
+        {
+          name: `${emojiToString(SUPPORT_EMOJI)} Support Ticket`,
+          value: '> Questions, help & general issues',
+          inline: true,
+        },
+        {
+          name: `${emojiToString(REPORT_EMOJI)} Report Ticket`,
+          value: '> Report a member, a staff member or a bug',
+          inline: true,
+        },
+        {
+          name: 'How it works',
+          value: '`1` Choose a category below\n`2` Describe your issue in detail\n`3` A staff member will join you shortly',
+          inline: false,
+        },
+        {
+          name: 'Good to know',
+          value:
+            '• One open ticket per member\n• No need to ping staff, we will get to you\n• You get a copy of the transcript in your DMs (if they are open)',
+          inline: false,
+        }
+      )
+      .setFooter({
+        text: `${channel.guild.name} • Pick the right category for faster help`,
+        ...(guildIcon ? { iconURL: guildIcon } : {}),
+      });
+
+    if (guildIcon) embed.setThumbnail(guildIcon);
 
     if (existing) {
       // Update the old panel in place so color/text changes apply without deleting it
