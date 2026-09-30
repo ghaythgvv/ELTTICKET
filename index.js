@@ -33,6 +33,9 @@ const COLOR = 0x9b59b6;
 // Animated emoji used on the Claim button
 const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: true };
 
+// Emoji shown in the "Ticket claimed by ..." message
+const CLAIMED_MSG_EMOJI = { id: '1554675609525821531', name: 'ticket_claimed' };
+
 // Custom emojis for the Close Ticket and Delete Ticket buttons.
 // (If either one is an animated emoji, add  animated: true  to it.)
 const CLOSE_EMOJI = { id: '1553472894976393246', name: 'close_ticket' };
@@ -327,7 +330,7 @@ async function handleClaim(i) {
 
   await i.update({ embeds: [embed], components: [ticketButtons({ claimed: true, closed: state.closed })] });
   await i.channel.send({
-    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(CLAIM_EMOJI)} Ticket claimed by ${i.user}`)],
+    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(CLAIMED_MSG_EMOJI)} Ticket claimed by ${i.user}`)],
   });
 }
 
