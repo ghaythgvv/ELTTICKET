@@ -27,7 +27,12 @@ const STAFF_ROLE_IDS = (process.env.STAFF_ROLE_IDS || '1513904136783925380')
   .map((s) => s.trim())
   .filter(Boolean);
 
-const COLOR = 0x5865f2;
+// Embed color (purple). Change to 0x8a2be2 for a more vivid purple.
+const COLOR = 0x9b59b6;
+
+// Animated emoji used on the Claim button
+const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: true };
+
 const TYPES = {
   support: { label: 'Support Ticket', emoji: '🛠️', prefix: 'support' },
   report: { label: 'Report Ticket', emoji: '🚨', prefix: 'report' },
@@ -65,7 +70,7 @@ function ticketButtons({ claimed = false, closed = false } = {}) {
     new ButtonBuilder()
       .setCustomId('ticket_claim')
       .setLabel(claimed ? 'Claimed' : 'Claim')
-      .setEmoji('🙋')
+      .setEmoji(CLAIM_EMOJI)
       .setStyle(ButtonStyle.Success)
       .setDisabled(claimed),
     closed
