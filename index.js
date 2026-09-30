@@ -38,9 +38,14 @@ const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: tru
 const CLOSE_EMOJI = { id: '1553472894976393246' };
 const DELETE_EMOJI = { id: '1553472896398270574' };
 
+// Emojis for the ticket types (used in the dropdown and in the ticket embed title)
+const SUPPORT_EMOJI = { id: '1554665054312341514', name: '865560adminroleicon' };
+const REPORT_EMOJI = { id: '1554664860476907550', name: 'purplealert1086520955985199115', animated: true };
+const emojiToString = (e) => `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`;
+
 const TYPES = {
-  support: { label: 'Support Ticket', emoji: '🛠️', prefix: 'support' },
-  report: { label: 'Report Ticket', emoji: '🚨', prefix: 'report' },
+  support: { label: 'Support Ticket', emoji: emojiToString(SUPPORT_EMOJI), prefix: 'support' },
+  report: { label: 'Report Ticket', emoji: emojiToString(REPORT_EMOJI), prefix: 'report' },
 };
 
 if (!TOKEN) {
@@ -91,8 +96,8 @@ function ticketTypeMenu() {
       .setCustomId('ticket_type')
       .setPlaceholder('Select a ticket type')
       .addOptions(
-        { label: 'Support Ticket', value: 'support', emoji: '🛠️', description: 'Get help from the staff team' },
-        { label: 'Report Ticket', value: 'report', emoji: '🚨', description: 'Report a user or an issue' }
+        { label: 'Support Ticket', value: 'support', emoji: SUPPORT_EMOJI, description: 'Get help from the staff team' },
+        { label: 'Report Ticket', value: 'report', emoji: REPORT_EMOJI, description: 'Report a user or an issue' }
       )
   );
 }
