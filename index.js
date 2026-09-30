@@ -33,6 +33,11 @@ const COLOR = 0x9b59b6;
 // Animated emoji used on the Claim button
 const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: true };
 
+// Custom emojis for the Close Ticket and Delete Ticket buttons.
+// (If either one is an animated emoji, add  animated: true  to it.)
+const CLOSE_EMOJI = { id: '1553472894976393246' };
+const DELETE_EMOJI = { id: '1553472896398270574' };
+
 const TYPES = {
   support: { label: 'Support Ticket', emoji: '🛠️', prefix: 'support' },
   report: { label: 'Report Ticket', emoji: '🚨', prefix: 'report' },
@@ -75,8 +80,8 @@ function ticketButtons({ claimed = false, closed = false } = {}) {
       .setDisabled(claimed),
     closed
       ? new ButtonBuilder().setCustomId('ticket_reopen').setLabel('Reopen').setEmoji('🔓').setStyle(ButtonStyle.Secondary)
-      : new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji('🔒').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete Ticket').setEmoji('🗑️').setStyle(ButtonStyle.Secondary)
+      : new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji(CLOSE_EMOJI).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete Ticket').setEmoji(DELETE_EMOJI).setStyle(ButtonStyle.Secondary)
   );
 }
 
