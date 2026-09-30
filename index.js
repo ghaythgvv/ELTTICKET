@@ -35,13 +35,21 @@ const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: tru
 
 // Custom emojis for the Close Ticket and Delete Ticket buttons.
 // (If either one is an animated emoji, add  animated: true  to it.)
-const CLOSE_EMOJI = { id: '1553472894976393246' };
-const DELETE_EMOJI = { id: '1553472896398270574' };
+const CLOSE_EMOJI = { id: '1553472894976393246', name: 'close_ticket' };
+const DELETE_EMOJI = { id: '1553472896398270574', name: 'delete_ticket' };
 
 // Emojis for the ticket types (used in the dropdown and in the ticket embed title)
 const SUPPORT_EMOJI = { id: '1554665054312341514', name: '865560adminroleicon' };
 const REPORT_EMOJI = { id: '1554664860476907550', name: 'purplealert1086520955985199115', animated: true };
 const emojiToString = (e) => `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`;
+
+// Emoji in the "Ticket" panel title
+const PANEL_EMOJI = { id: '1554668288947126282', name: 'purple_ticket' };
+
+// Emojis for Reopen, errors and warnings
+const UNLOCK_EMOJI = { id: '1553483080998588456', name: 'unlock_ticket' };
+const ERROR_EMOJI = { id: '1554671367142645770', name: 'error_purple' };
+const WARN_EMOJI = { id: '1554671365490212945', name: 'warn_purple' };
 
 const TYPES = {
   support: { label: 'Support Ticket', emoji: emojiToString(SUPPORT_EMOJI), prefix: 'support' },
@@ -84,7 +92,7 @@ function ticketButtons({ claimed = false, closed = false } = {}) {
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(claimed),
     closed
-      ? new ButtonBuilder().setCustomId('ticket_reopen').setLabel('Reopen').setEmoji('🔓').setStyle(ButtonStyle.Secondary)
+      ? new ButtonBuilder().setCustomId('ticket_reopen').setLabel('Reopen').setEmoji(UNLOCK_EMOJI).setStyle(ButtonStyle.Secondary)
       : new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji(CLOSE_EMOJI).setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete Ticket').setEmoji(DELETE_EMOJI).setStyle(ButtonStyle.Secondary)
   );
@@ -166,7 +174,7 @@ async function ensurePanel(channel) {
 
     const embed = new EmbedBuilder()
       .setColor(COLOR)
-      .setTitle('🎫 Ticket')
+      .setTitle(`${emojiToString(PANEL_EMOJI)} Ticket`)
       .setDescription('Choose your ticket.\n\nSelect the type of ticket you want to open from the dropdown below.')
       .setFooter({ text: channel.guild.name });
 
@@ -203,7 +211,7 @@ async function handleCreate(i) {
     (c) => c.parentId === CATEGORY_ID && parseTopic(c)?.owner === user.id
   );
   if (existing) {
-    return i.editReply({ content: `❌ You already have an open ticket: ${existing}` });
+    return i.editReply({ content: `${emojiToString(ERROR_EMOJI)} You already have an open ticket: ${existing}` });
   }
 
   const safeName = user.username.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || user.id;
@@ -270,14 +278,14 @@ async function handleCreate(i) {
     allowedMentions: { users: [user.id], roles: STAFF_ROLE_IDS },
   });
 
-  await i.editReply({ content: `✅ Your ticket has been created: ${channel}` });
+  await i.editReply({ content: `☑️ Your ticket has been created: ${channel}` });
 }
 
 async function handleClaim(i) {
-  if (!isStaff(i.member)) return reply(i, '❌ Only staff can claim tickets.');
+  if (!isStaff(i.member)) return reply(i, `${emojiToString(ERROR_EMOJI)} Only staff can claim tickets.`);
 
   const state = panelState(i.message);
-  if (state.claimed) return reply(i, '❌ This ticket is already claimed.');
+  if (state.claimed) return reply(i, `${emojiToString(ERROR_EMOJI)} This ticket is already claimed.`);
 
   const embed = EmbedBuilder.from(i.message.embeds[0]);
   const fields = (embed.data.fields || []).filter((f) => f.name !== 'Claimed by');
@@ -285,14 +293,14 @@ async function handleClaim(i) {
 
   await i.update({ embeds: [embed], components: [ticketButtons({ claimed: true, closed: state.closed })] });
   await i.channel.send({
-    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`🙋 Ticket claimed by ${i.user}`)],
+    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(CLAIM_EMOJI)} Ticket claimed by ${i.user}`)],
   });
 }
 
 async function handleClose(i) {
   const data = parseTopic(i.channel);
-  if (!data) return reply(i, '❌ This is not a ticket channel.');
-  if (!isStaff(i.member) && i.user.id !== data.owner) return reply(i, '❌ You cannot close this ticket.');
+  if (!data) return reply(i, `${emojiToString(ERROR_EMOJI)} This is not a ticket channel.`);
+  if (!isStaff(i.member) && i.user.id !== data.owner) return reply(i, `${emojiToString(ERROR_EMOJI)} You cannot close this ticket.`);
 
   const state = panelState(i.message);
   await i.channel.permissionOverwrites.edit(data.owner, { SendMessages: false }).catch(() => {});
@@ -302,32 +310,32 @@ async function handleClose(i) {
     embeds: [
       new EmbedBuilder()
         .setColor(0xfee75c)
-        .setDescription(`🔒 Ticket closed by ${i.user}. Staff can **Reopen** or **Delete** it.`),
+        .setDescription(`${emojiToString(CLOSE_EMOJI)} Ticket closed by ${i.user}. Staff can **Reopen** or **Delete** it.`),
     ],
   });
 }
 
 async function handleReopen(i) {
   const data = parseTopic(i.channel);
-  if (!data) return reply(i, '❌ This is not a ticket channel.');
-  if (!isStaff(i.member)) return reply(i, '❌ Only staff can reopen tickets.');
+  if (!data) return reply(i, `${emojiToString(ERROR_EMOJI)} This is not a ticket channel.`);
+  if (!isStaff(i.member)) return reply(i, `${emojiToString(ERROR_EMOJI)} Only staff can reopen tickets.`);
 
   const state = panelState(i.message);
   await i.channel.permissionOverwrites.edit(data.owner, { SendMessages: true }).catch(() => {});
 
   await i.update({ components: [ticketButtons({ claimed: state.claimed, closed: false })] });
   await i.channel.send({
-    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`🔓 Ticket reopened by ${i.user}.`)],
+    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(UNLOCK_EMOJI)} Ticket reopened by ${i.user}.`)],
   });
 }
 
 async function handleDelete(i) {
   const data = parseTopic(i.channel);
-  if (!data) return reply(i, '❌ This is not a ticket channel.');
-  if (!isStaff(i.member)) return reply(i, '❌ Only staff can delete tickets.');
+  if (!data) return reply(i, `${emojiToString(ERROR_EMOJI)} This is not a ticket channel.`);
+  if (!isStaff(i.member)) return reply(i, `${emojiToString(ERROR_EMOJI)} Only staff can delete tickets.`);
 
   await i.reply({
-    embeds: [new EmbedBuilder().setColor(0xed4245).setDescription('🗑️ Generating transcript… this channel will be deleted in 5 seconds.')],
+    embeds: [new EmbedBuilder().setColor(0xed4245).setDescription(`${emojiToString(DELETE_EMOJI)} Generating transcript… this channel will be deleted in 5 seconds.`)],
   });
 
   const channel = i.channel;
@@ -378,7 +386,7 @@ async function handleDelete(i) {
     }
   } catch (err) {
     console.error('Transcript error:', err);
-    await channel.send('⚠️ Failed to generate/send the transcript. Deletion cancelled.').catch(() => {});
+    await channel.send(`${emojiToString(WARN_EMOJI)} Failed to generate/send the transcript. Deletion cancelled.`).catch(() => {});
     return;
   }
 
@@ -406,7 +414,7 @@ client.on(Events.InteractionCreate, async (i) => {
     }
   } catch (err) {
     console.error('Interaction error:', err);
-    const msg = { content: '❌ Something went wrong. Check the bot permissions and category ID.', flags: MessageFlags.Ephemeral };
+    const msg = { content: `${emojiToString(ERROR_EMOJI)} Something went wrong. Check the bot permissions and category ID.`, flags: MessageFlags.Ephemeral };
     if (i.deferred || i.replied) i.followUp(msg).catch(() => {});
     else i.reply(msg).catch(() => {});
   }
