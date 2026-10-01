@@ -41,7 +41,7 @@ const CLAIMED_MSG_EMOJI = { id: '1554675609525821531', name: 'ticket_claimed' };
 const CLOSE_EMOJI = { id: '1553472894976393246', name: 'close_ticket' };
 const DELETE_EMOJI = { id: '1553472896398270574', name: 'delete_ticket' };
 
-// Emojis for the ticket types (used in the dropdown and in the ticket embed title)
+// Emojis for the ticket types (used in the panel embed and in the ticket embed title)
 const SUPPORT_EMOJI = { id: '1554665054312341514', name: '865560adminroleicon' };
 const REPORT_EMOJI = { id: '1554664860476907550', name: 'purplealert1086520955985199115', animated: true };
 const emojiToString = (e) => `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`;
@@ -107,8 +107,8 @@ function ticketTypeMenu() {
       .setCustomId('ticket_type')
       .setPlaceholder('Select your ticket type…')
       .addOptions(
-        { label: 'Support Ticket', value: 'support', emoji: SUPPORT_EMOJI, description: 'Questions, help & general issues' },
-        { label: 'Report Ticket', value: 'report', emoji: REPORT_EMOJI, description: 'Report a member, a staff member or a bug' }
+        { label: 'General Support', value: 'support', description: 'Need help or have a question? Open a support ticket.' },
+        { label: 'Report a Problem', value: 'report', description: 'Report a member, a staff member or a bug.' }
       )
   );
 }
