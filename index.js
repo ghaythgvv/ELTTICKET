@@ -27,14 +27,18 @@ const STAFF_ROLE_IDS = (process.env.STAFF_ROLE_IDS || '1513904136783925380')
   .map((s) => s.trim())
   .filter(Boolean);
 
-// Embed color (purple). Change to 0x8a2be2 for a more vivid purple.
+// Embed color (purple) — used by EVERY embed the bot sends.
+// Change to 0x8a2be2 for a more vivid purple.
 const COLOR = 0x9b59b6;
 
 // Animated emoji used on the Claim button
 const CLAIM_EMOJI = { id: '1552077450442186862', name: 'emoji_14', animated: true };
 
-// Emoji shown in the "Ticket claimed by ..." message
-const CLAIMED_MSG_EMOJI = { id: '1554675609525821531', name: 'ticket_claimed' };
+// Emoji shown in the "Ticket claimed by ..." message.
+// It is animated, so it MUST have animated: true — without it Discord shows the
+// plain text ":ticket_claimed:" instead of the emoji.
+// (If it is actually a static emoji, change animated to false.)
+const CLAIMED_MSG_EMOJI = { id: '1554675609525821531', name: 'ticket_claimed', animated: true };
 
 // Custom emojis for the Close Ticket and Delete Ticket buttons.
 // (If either one is an animated emoji, add  animated: true  to it.)
@@ -324,13 +328,33 @@ async function handleClaim(i) {
   const state = panelState(i.message);
   if (state.claimed) return reply(i, `${emojiToString(ERROR_EMOJI)} This ticket is already claimed.`);
 
-  const embed = EmbedBuilder.from(i.message.embeds[0]);
+  const embed = EmbedBuilder.from(i.message.embeds[0]).setColor(COLOR);
   const fields = (embed.data.fields || []).filter((f) => f.name !== 'Claimed by');
   embed.setFields([...fields, { name: 'Claimed by', value: `${i.user}`, inline: true }]);
 
   await i.update({ embeds: [embed], components: [ticketButtons({ claimed: true, closed: state.closed })] });
+
+  const data = parseTopic(i.channel);
+  const ownerMention = data?.owner ? `<@${data.owner}>` : 'you';
+
   await i.channel.send({
-    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(CLAIMED_MSG_EMOJI)} Ticket claimed by ${i.user}`)],
+    content: data?.owner ? `<@${data.owner}>` : undefined,
+    allowedMentions: { users: data?.owner ? [data.owner] : [] },
+    embeds: [
+      new EmbedBuilder()
+        .setColor(COLOR)
+        .setAuthor({
+          name: `${i.member.displayName} claimed this ticket`,
+          iconURL: i.member.displayAvatarURL({ size: 128 }),
+        })
+        .setDescription(
+          `${emojiToString(CLAIMED_MSG_EMOJI)} **Ticket Claimed**\n\n` +
+            `> ${i.user} is now handling this ticket.\n` +
+            `> ${ownerMention}, please share any extra details while they review your request.`
+        )
+        .setFooter({ text: 'ELT | Ticket System' })
+        .setTimestamp(),
+    ],
   });
 }
 
@@ -346,7 +370,7 @@ async function handleClose(i) {
   await i.channel.send({
     embeds: [
       new EmbedBuilder()
-        .setColor(0xfee75c)
+        .setColor(COLOR)
         .setDescription(`${emojiToString(CLOSE_EMOJI)} Ticket closed by ${i.user}. Staff can **Reopen** or **Delete** it.`),
     ],
   });
@@ -362,7 +386,7 @@ async function handleReopen(i) {
 
   await i.update({ components: [ticketButtons({ claimed: state.claimed, closed: false })] });
   await i.channel.send({
-    embeds: [new EmbedBuilder().setColor(0x57f287).setDescription(`${emojiToString(UNLOCK_EMOJI)} Ticket reopened by ${i.user}.`)],
+    embeds: [new EmbedBuilder().setColor(COLOR).setDescription(`${emojiToString(UNLOCK_EMOJI)} Ticket reopened by ${i.user}.`)],
   });
 }
 
@@ -372,7 +396,7 @@ async function handleDelete(i) {
   if (!isStaff(i.member)) return reply(i, `${emojiToString(ERROR_EMOJI)} Only staff can delete tickets.`);
 
   await i.reply({
-    embeds: [new EmbedBuilder().setColor(0xed4245).setDescription(`${emojiToString(DELETE_EMOJI)} Generating transcript… this channel will be deleted in 5 seconds.`)],
+    embeds: [new EmbedBuilder().setColor(COLOR).setDescription(`${emojiToString(DELETE_EMOJI)} Generating transcript… this channel will be deleted in 5 seconds.`)],
   });
 
   const channel = i.channel;
@@ -400,7 +424,7 @@ async function handleDelete(i) {
     ];
 
     const logEmbed = new EmbedBuilder()
-      .setColor(0xed4245)
+      .setColor(COLOR)
       .setTitle('📄 Ticket Deleted')
       .addFields(
         { name: 'Ticket', value: `#${channel.name}`, inline: true },
